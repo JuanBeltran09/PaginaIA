@@ -1,0 +1,1245 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Evolución de Bases de Datos en Netflix | Caso de Estudio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --netflix-red: #E50914;
+            --netflix-red-dark: #B20710;
+            --netflix-black: #141414;
+            --netflix-dark-gray: #1F1F1F;
+            --netflix-gray: #2F2F2F;
+            --netflix-light-gray: #808080;
+            --netflix-white: #FFFFFF;
+            --netflix-off-white: #E5E5E5;
+            --gradient-dark: linear-gradient(180deg, #141414 0%, #0A0A0A 100%);
+            --gradient-card: linear-gradient(145deg, #1F1F1F 0%, #141414 100%);
+            --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.4);
+            --shadow-hover: 0 12px 40px rgba(229, 9, 20, 0.15);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--netflix-black);
+            color: var(--netflix-off-white);
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+
+        /* Header & Hero */
+        .hero {
+            min-height: 100vh;
+            background: var(--gradient-dark);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(ellipse at center, rgba(229, 9, 20, 0.08) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 1;
+            max-width: 900px;
+        }
+
+        .netflix-logo {
+            font-size: 3.5rem;
+            font-weight: 800;
+            color: var(--netflix-red);
+            margin-bottom: 1rem;
+            letter-spacing: -2px;
+        }
+
+        .hero h1 {
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            font-weight: 800;
+            color: var(--netflix-white);
+            margin-bottom: 1.5rem;
+            line-height: 1.2;
+        }
+
+        .hero h1 span {
+            color: var(--netflix-red);
+        }
+
+        .hero-subtitle {
+            font-size: clamp(1.1rem, 2.5vw, 1.5rem);
+            color: var(--netflix-light-gray);
+            font-weight: 300;
+            margin-bottom: 2rem;
+        }
+
+        .hero-intro {
+            font-size: 1.1rem;
+            color: var(--netflix-off-white);
+            max-width: 700px;
+            margin: 0 auto 3rem;
+            line-height: 1.8;
+        }
+
+        .scroll-indicator {
+            position: absolute;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            animation: bounce 2s infinite;
+        }
+
+        .scroll-indicator i {
+            font-size: 2rem;
+            color: var(--netflix-red);
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateX(-50%) translateY(0); }
+            40% { transform: translateX(-50%) translateY(-15px); }
+            60% { transform: translateX(-50%) translateY(-8px); }
+        }
+
+        /* Navigation */
+        .nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(20, 20, 20, 0.95);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            transform: translateY(-100%);
+            transition: transform 0.3s ease;
+        }
+
+        .nav.visible {
+            transform: translateY(0);
+        }
+
+        .nav-logo {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--netflix-red);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: var(--netflix-off-white);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            color: var(--netflix-red);
+        }
+
+        /* Sections */
+        section {
+            padding: 5rem 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 4rem;
+        }
+
+        .section-icon {
+            width: 80px;
+            height: 80px;
+            background: var(--gradient-card);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+            border: 1px solid rgba(229, 9, 20, 0.2);
+            box-shadow: var(--shadow-card);
+        }
+
+        .section-icon i {
+            font-size: 2.5rem;
+            color: var(--netflix-red);
+        }
+
+        .section-title {
+            font-size: clamp(1.8rem, 4vw, 2.5rem);
+            font-weight: 700;
+            color: var(--netflix-white);
+            margin-bottom: 1rem;
+        }
+
+        .section-subtitle {
+            font-size: 1.1rem;
+            color: var(--netflix-light-gray);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Cards */
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .card {
+            background: var(--gradient-card);
+            border-radius: 16px;
+            padding: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: var(--shadow-card);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--netflix-red), transparent);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-8px);
+            box-shadow: var(--shadow-hover);
+            border-color: rgba(229, 9, 20, 0.3);
+        }
+
+        .card:hover::before {
+            opacity: 1;
+        }
+
+        .card-icon {
+            width: 50px;
+            height: 50px;
+            background: rgba(229, 9, 20, 0.1);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-icon i {
+            font-size: 1.5rem;
+            color: var(--netflix-red);
+        }
+
+        .card h3 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--netflix-white);
+            margin-bottom: 1rem;
+        }
+
+        .card p, .card ul {
+            color: var(--netflix-off-white);
+            font-size: 0.95rem;
+            line-height: 1.8;
+        }
+
+        .card ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .card ul li {
+            padding-left: 1.5rem;
+            position: relative;
+            margin-bottom: 0.8rem;
+        }
+
+        .card ul li::before {
+            content: '▸';
+            position: absolute;
+            left: 0;
+            color: var(--netflix-red);
+            font-weight: bold;
+        }
+
+        /* Timeline */
+        .timeline {
+            position: relative;
+            padding: 2rem 0;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 2px;
+            height: 100%;
+            background: linear-gradient(180deg, var(--netflix-red), var(--netflix-gray));
+        }
+
+        .timeline-item {
+            display: flex;
+            justify-content: flex-end;
+            padding-right: 50%;
+            position: relative;
+            margin-bottom: 3rem;
+        }
+
+        .timeline-item:nth-child(even) {
+            justify-content: flex-start;
+            padding-right: 0;
+            padding-left: 50%;
+        }
+
+        .timeline-content {
+            background: var(--gradient-card);
+            border-radius: 16px;
+            padding: 2rem;
+            max-width: 450px;
+            margin-right: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: var(--shadow-card);
+            position: relative;
+        }
+
+        .timeline-item:nth-child(even) .timeline-content {
+            margin-right: 0;
+            margin-left: 2rem;
+        }
+
+        .timeline-dot {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: var(--netflix-red);
+            border-radius: 50%;
+            top: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 4px solid var(--netflix-black);
+            box-shadow: 0 0 0 2px var(--netflix-red);
+        }
+
+        .timeline-year {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--netflix-red);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0.5rem;
+        }
+
+        .timeline-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--netflix-white);
+            margin-bottom: 1rem;
+        }
+
+        .timeline-content p {
+            color: var(--netflix-off-white);
+            font-size: 0.95rem;
+            line-height: 1.7;
+        }
+
+        /* Feature List */
+        .feature-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            background: var(--gradient-card);
+            padding: 1.5rem;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        .feature-item:hover {
+            border-color: rgba(229, 9, 20, 0.3);
+            transform: translateX(8px);
+        }
+
+        .feature-icon {
+            width: 45px;
+            height: 45px;
+            background: rgba(229, 9, 20, 0.1);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .feature-icon i {
+            font-size: 1.2rem;
+            color: var(--netflix-red);
+        }
+
+        .feature-content h4 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--netflix-white);
+            margin-bottom: 0.3rem;
+        }
+
+        .feature-content p {
+            font-size: 0.9rem;
+            color: var(--netflix-light-gray);
+            line-height: 1.6;
+        }
+
+        /* References */
+        .references {
+            background: var(--netflix-dark-gray);
+            border-radius: 16px;
+            padding: 3rem;
+            margin-top: 3rem;
+        }
+
+        .references h3 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--netflix-white);
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+
+        .references h3 i {
+            color: var(--netflix-red);
+        }
+
+        .references ol {
+            padding-left: 1.5rem;
+        }
+
+        .references li {
+            margin-bottom: 1rem;
+            color: var(--netflix-off-white);
+            font-size: 0.95rem;
+            line-height: 1.7;
+        }
+
+        .references a {
+            color: var(--netflix-red);
+            text-decoration: none;
+            word-break: break-all;
+        }
+
+        .references a:hover {
+            text-decoration: underline;
+        }
+
+        /* Footer */
+        footer {
+            background: var(--netflix-dark-gray);
+            padding: 3rem 2rem;
+            text-align: center;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .footer-logo {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--netflix-red);
+            margin-bottom: 1rem;
+        }
+
+        .footer-text {
+            color: var(--netflix-light-gray);
+            font-size: 0.9rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .footer-team {
+            color: var(--netflix-off-white);
+            font-size: 1rem;
+            font-weight: 500;
+        }
+
+        .footer-team span {
+            color: var(--netflix-red);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+
+            section {
+                padding: 3rem 1.5rem;
+            }
+
+            .timeline::before {
+                left: 20px;
+            }
+
+            .timeline-item,
+            .timeline-item:nth-child(even) {
+                justify-content: flex-start;
+                padding-left: 50px;
+                padding-right: 0;
+            }
+
+            .timeline-content,
+            .timeline-item:nth-child(even) .timeline-content {
+                margin-left: 0;
+                margin-right: 0;
+                max-width: 100%;
+            }
+
+            .timeline-dot {
+                left: 20px;
+                transform: translateX(-50%);
+            }
+
+            .cards-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .references {
+                padding: 2rem 1.5rem;
+            }
+
+            .feature-item:hover {
+                transform: none;
+            }
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .card, .timeline-content, .feature-item {
+            animation: fadeInUp 0.6s ease forwards;
+        }
+
+        /* Highlight box */
+        .highlight-box {
+            background: linear-gradient(135deg, rgba(229, 9, 20, 0.1) 0%, rgba(229, 9, 20, 0.05) 100%);
+            border-left: 4px solid var(--netflix-red);
+            border-radius: 0 12px 12px 0;
+            padding: 1.5rem 2rem;
+            margin: 2rem 0;
+        }
+
+        .highlight-box p {
+            color: var(--netflix-off-white);
+            font-size: 1rem;
+            line-height: 1.8;
+            margin: 0;
+        }
+
+        .highlight-box strong {
+            color: var(--netflix-white);
+        }
+    </style>
+<base target="_blank">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="nav" id="navbar">
+        <div class="nav-logo">NETFLIX</div>
+        <ul class="nav-links">
+            <li><a href="#intro">Introducción</a></li>
+            <li><a href="#antes">Antes</a></li>
+            <li><a href="#desafios">Desafíos</a></li>
+            <li><a href="#transicion">Transición</a></li>
+            <li><a href="#tecnologias">Tecnologías</a></li>
+            <li><a href="#beneficios">Beneficios</a></li>
+            <li><a href="#dificultades">Dificultades</a></li>
+            <li><a href="#lecciones">Lecciones</a></li>
+        </ul>
+    </nav>
+
+    <!-- Hero Section -->
+    <header class="hero" id="intro">
+        <div class="hero-content">
+            <div class="netflix-logo">N</div>
+            <h1>Evolución de <span>Bases de Datos</span> en Netflix</h1>
+            <p class="hero-subtitle">De Oracle monolítico a arquitectura cloud nativa</p>
+            <p class="hero-intro">
+                Netflix, la plataforma de streaming líder mundial con más de 230 millones de suscriptores, 
+                enfrentó uno de los desafíos tecnológicos más ambiciosos de la última década: transformar 
+                su infraestructura de datos desde una arquitectura relacional tradicional hacia un ecosistema 
+                cloud-native distribuido. Este caso de estudio explora cómo Netflix redefinió su stack 
+                tecnológico para escalar globalmente.
+            </p>
+        </div>
+        <div class="scroll-indicator">
+            <i class="fas fa-chevron-down"></i>
+        </div>
+    </header>
+
+    <!-- Timeline Section -->
+    <section>
+        <div class="section-header">
+            <div class="section-icon">
+                <i class="fas fa-stream"></i>
+            </div>
+            <h2 class="section-title">Línea de Tiempo de la Transformación</h2>
+            <p class="section-subtitle">Un viaje de 7 años desde la crisis hasta la excelencia cloud</p>
+        </div>
+
+        <div class="timeline">
+            <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <div class="timeline-content">
+                    <div class="timeline-year">Agosto 2008</div>
+                    <h3 class="timeline-title">La Crisis Oracle</h3>
+                    <p>Una corrupción de datos en la base de datos Oracle dejó a Netflix sin poder enviar DVDs durante tres días. Este evento catalizó la necesidad de cambiar radicalmente la arquitectura.</p>
+                </div>
+            </div>
+
+            <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <div class="timeline-content">
+                    <div class="timeline-year">2009-2010</div>
+                    <h3 class="timeline-title">Inicio de la Migración a AWS</h3>
+                    <p>Netflix comienza a mover sistemas no críticos a la nube de Amazon Web Services, experimentando con nuevas tecnologías y aprendiendo del proceso.</p>
+                </div>
+            </div>
+
+            <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <div class="timeline-content">
+                    <div class="timeline-year">2011-2013</div>
+                    <h3 class="timeline-title">Adopción de NoSQL y Microservicios</h3>
+                    <p>Implementación de Apache Cassandra para datos de usuarios, metadatos y calificaciones. Migración progresiva a una arquitectura de microservicios.</p>
+                </div>
+            </div>
+
+            <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <div class="timeline-content">
+                    <div class="timeline-year">2014-2016</div>
+                    <h3 class="timeline-title">Escalamiento Global</h3>
+                    <p>Expansión a más de 190 países con la infraestructura cloud. Desarrollo de Open Connect y herramientas internas como Spinnaker y Chaos Monkey.</p>
+                </div>
+            </div>
+
+            <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <div class="timeline-content">
+                    <div class="timeline-year">Enero 2016</div>
+                    <h3 class="timeline-title">Migración Completada</h3>
+                    <p>Netflix anuncia oficialmente la finalización de su migración a la nube, cerrando su último centro de datos propietario.</p>
+                </div>
+            </div>
+
+            <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <div class="timeline-content">
+                    <div class="timeline-year">Actualidad</div>
+                    <h3 class="timeline-title">Arquitectura Cloud-Native</h3>
+                    <p>Más de 700 microservicios, billones de operaciones diarias, disponibilidad del 99.99% y continua innovación en persistencia políglota.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Antes Section -->
+    <section id="antes">
+        <div class="section-header">
+            <div class="section-icon">
+                <i class="fas fa-database"></i>
+            </div>
+            <h2 class="section-title">Antes: Arquitectura Relacional</h2>
+            <p class="section-subtitle">Los orígenes monolíticos de Netflix</p>
+        </div>
+
+        <div class="highlight-box">
+            <p>
+                <strong>Contexto histórico:</strong> A finales de los 90 y principios de los 2000, Netflix operaba 
+                con alquiler de DVD por correo. Usaba una base de datos relacional Oracle en centros de datos 
+                propios, con arquitectura monolítica y escalamiento vertical. Toda la información crítica 
+                (usuarios, pedidos, pagos) se centralizaba en un solo lugar, lo que generaba un punto único 
+                de fallo. Esta dependencia quedó en evidencia en 2008, cuando una corrupción de datos en 
+                Oracle dejó a Netflix sin poder enviar DVDs durante tres días.
+            </p>
+        </div>
+
+        <div class="cards-grid">
+            <div class="card">
+                <div class="card-icon">
+                    <i class="fas fa-server"></i>
+                </div>
+                <h3>Base de Datos Oracle</h3>
+                <p>Sistema relacional centralizado que almacenaba toda la información crítica del negocio en un único servidor.</p>
+            </div>
+
+            <div class="card">
+                <div class="card-icon">
+                    <i class="fas fa-building"></i>
+                </div>
+                <h3>Centros de Datos Propios</h3>
+                <p>Infraestructura on-premise con servidores físicos que requerían mantenimiento constante y escalamiento vertical costoso.</p>
+            </div>
+
+            <div class="card">
+                <div class="card-icon">
+                    <i class="fas fa-cube"></i>
+                </div>
+                <h3>Arquitectura Monolítica</h3>
+                <p>Aplicación única donde todos los componentes estaban interconectados, dificultando el aislamiento de fallos.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Desafíos Section -->
+    <section id="desafios">
+        <div class="section-header">
+            <div class="section-icon">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <h2 class="section-title">Desafíos y Limitaciones</h2>
+            <p class="section-subtitle">Los obstáculos que impulsaron el cambio</p>
+        </div>
+
+        <div class="cards-grid">
+            <div class="card">
+                <div class="card-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <h3>Escalabilidad Limitada</h3>
+                <p>El crecimiento exponencial de usuarios requería adquirir e instalar hardware constantemente, sin poder adaptarse a picos de demanda. El escalamiento vertical tenía límites físicos y económicos insostenibles.</p>
+            </div>
+
+            <div class="card">
+                <div class="card-icon">
+                    <i class="fas fa-tachometer-alt"></i>
+                </div>
+                <h3>Problemas de Rendimiento</h3>
+                <p>La distancia física con los centros de datos causaba latencia, buffering y mala experiencia en streaming. Los usuarios internacionales sufrían especialmente con tiempos de carga prolongados.</p>
+            </div>
+
+            <div class="card">
+                <div class="card-icon">
+                    <i class="fas fa-lock"></i>
+                </div>
+                <h3>Arquitectura Monolítica</h3>
+                <p>Dificultaba el desarrollo ágil, el aislamiento de fallos y la replicación global de datos. Cualquier cambio requería desplegar toda la aplicación, aumentando el riesgo de errores.</p>
+            </div>
+
+            <div class="card">
+                <div class="card-icon">
+                    <i class="fas fa-power-off"></i>
+                </div>
+                <h3>Disponibilidad Frágil</h3>
+                <p>Un fallo en la base de datos central podía (y de hecho) tumbar todo el servicio. La crisis de 2008 demostró que el modelo actual no podía garantizar la continuidad del negocio.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Transición Section -->
+    <section id="transicion">
+        <div class="section-header">
+            <div class="section-icon">
+                <i class="fas fa-cloud"></i>
+            </div>
+            <h2 class="section-title">La Transición: Nuevas Tecnologías</h2>
+            <p class="section-subtitle">El rediseño completo de la infraestructura</p>
+        </div>
+
+        <div class="cards-grid">
+            <div class="card">
+                <div class="card-icon">
+                    <i class="fab fa-aws"></i>
+                </div>
+                <h3>Amazon Web Services (AWS)</h3>
+                <p>Migración completa a la nube de AWS, aprovechando su elasticidad y alcance global para desplegar infraestructura en múltiples regiones.</p>
+            </div>
+
+            <div class="card">
+                <div class="card-icon">
+                    <i class="fas fa-project-diagram"></i>
+                </div>
+                <h3>Apache Cassandra</h3>
+                <p>Bases de datos NoSQL distribuidas para usuarios, metadatos y calificaciones. Ofrece escalabilidad horizontal y alta disponibilidad.</p>
+            </div>
+
+            <div class="card">
+                <div class="card-icon">
+                    <i class="fas fa-th"></i>
+                </div>
+                <h3>Arquitectura de Microservicios</h3>
+                <p>Desacoplamiento de funcionalidades en servicios independientes que pueden desplegarse y escalarse de forma autónoma.</p>
+            </div>
+
+            <div class="card">
+                <div class="card-icon">
+                    <i class="fas fa-project-diagram"></i>
+                </div>
+                <h3>Bases de Datos de Grafos</h3>
+                <p>Implementadas para el linaje de datos, permitiendo entender las complejas relaciones y dependencias entre los diferentes activos de datos.</p>
+            </div>
+
+            <div class="card">
+                <div class="card-icon">
+                    <i class="fas fa-bolt"></i>
+                </div>
+                <h3>EVCache</h3>
+                <p>Sistema de caché en memoria basado en Memcached, garantizando baja latencia para datos de alta demanda y acceso frecuente.</p>
+            </div>
+
+            <div class="card">
+                <div class="card-icon">
+                    <i class="fas fa-network-wired"></i>
+                </div>
+                <h3>Open Connect</h3>
+                <p>Motor de entrega de contenido propio (CDN) que optimiza la distribución de video reduciendo costos y latencia global.</p>
+            </div>
+
+            <div class="card">
+                <div class="card-icon">
+                    <i class="fas fa-database"></i>
+                </div>
+                <h3>MySQL en AWS RDS</h3>
+                <p>Utilizado exclusivamente para transacciones críticas que requieren consistencia ACID, demostrando el enfoque de persistencia políglota.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Tecnologías Section -->
+    <section id="tecnologias">
+        <div class="section-header">
+            <div class="section-icon">
+                <i class="fas fa-question-circle"></i>
+            </div>
+            <h2 class="section-title">¿Por qué esas tecnologías?</h2>
+            <p class="section-subtitle">Las razones detrás de cada elección estratégica</p>
+        </div>
+
+        <div class="feature-list">
+            <div class="feature-item">
+                <div class="feature-icon">
+                    <i class="fab fa-aws"></i>
+                </div>
+                <div class="feature-content">
+                    <h4>AWS - Elasticidad Global</h4>
+                    <p>Proporcionó la capacidad de añadir miles de servidores en minutos, eliminando la necesidad de planificar capacidad con meses de anticipación y permitiendo el crecimiento orgánico.</p>
+                </div>
+            </div>
+
+            <div class="feature-item">
+                <div class="feature-icon">
+                    <i class="fas fa-project-diagram"></i>
+                </div>
+                <div class="feature-content">
+                    <h4>Cassandra - Escalabilidad Horizontal</h4>
+                    <p>Ofreció escalabilidad horizontal ilimitada, alta disponibilidad sin puntos únicos de fallo y despliegue global rápido en múltiples regiones con replicación automática.</p>
+                </div>
+            </div>
+
+            <div class="feature-item">
+                <div class="feature-icon">
+                    <i class="fas fa-th"></i>
+                </div>
+                <div class="feature-content">
+                    <h4>Microservicios - Aislamiento de Fallos</h4>
+                    <p>Permitieron aislar fallos a servicios individuales y desplegar de forma independiente, aumentando la velocidad de desarrollo y reduciendo el riesgo de despliegues.</p>
+                </div>
+            </div>
+
+            <div class="feature-item">
+                <div class="feature-icon">
+                    <i class="fas fa-project-diagram"></i>
+                </div>
+                <div class="feature-content">
+                    <h4>Grafos - Entendimiento de Dependencias</h4>
+                    <p>Facilitaron comprender las complejas relaciones y dependencias entre datos distribuidos, esencial para debugging y planificación de cambios en un sistema distribuido.</p>
+                </div>
+            </div>
+
+            <div class="feature-item">
+                <div class="feature-icon">
+                    <i class="fas fa-bolt"></i>
+                </div>
+                <div class="feature-content">
+                    <h4>EVCache - Baja Latencia</h4>
+                    <p>Garantizó tiempos de respuesta ultrarrápidos para datos de alta demanda como perfiles de usuario y recomendaciones, reduciendo la carga en bases de datos persistentes.</p>
+                </div>
+            </div>
+
+            <div class="feature-item">
+                <div class="feature-icon">
+                    <i class="fas fa-network-wired"></i>
+                </div>
+                <div class="feature-content">
+                    <h4>Open Connect - Optimización de Video</h4>
+                    <p>Optimizó la entrega de contenido de video reduciendo costos de ancho de banda en un 20-40% y mejorando significativamente la experiencia de streaming global.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Beneficios Section -->
+    <section id="beneficios">
+        <div class="section-header">
+            <div class="section-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <h2 class="section-title">Beneficios Concretos</h2>
+            <p class="section-subtitle">Resultados medibles de la transformación</p>
+        </div>
+
+        <div class="cards-grid">
+            <div class="card">
+                <div class="card-icon">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <h3>Disponibilidad del 99.99%</h3>
+                <p>Sin caídas totales por fallos aislados. La arquitectura distribuida garantiza que el fallo de un componente no afecte el servicio global.</p>
+            </div>
+
+            <div class="card">
+                <div class="card-icon">
+                    <i class="fas fa-globe"></i>
+                </div>
+                <h3>Escalabilidad Horizontal</h3>
+                <p>Capacidad para procesar miles de millones de operaciones diarias y expandirse a más de 190 países sin degradación del servicio.</p>
+            </div>
+
+            <div class="card">
+                <div class="card-icon">
+                    <i class="fas fa-rocket"></i>
+                </div>
+                <h3>Agilidad de Desarrollo</h3>
+                <p>Despliegue de código independiente por equipos y creación de clústeres en minutos, no semanas. Miles de despliegues diarios.</p>
+            </div>
+
+            <div class="card">
+                <div class="card-icon">
+                    <i class="fas fa-dollar-sign"></i>
+                </div>
+                <h3>Eficiencia de Costos</h3>
+                <p>Reducción del costo por streaming y optimización del ancho de banda entre un 20-40% gracias a Open Connect y la eficiencia cloud.</p>
+            </div>
+
+            <div class="card">
+                <div class="card-icon">
+                    <i class="fas fa-heartbeat"></i>
+                </div>
+                <h3>Resiliencia Probada</h3>
+                <p>Las pruebas de caos (Chaos Monkey) garantizan que el sistema soporte fallos inesperados. El sistema está diseñado para fallar gracefulmente.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Dificultades Section -->
+    <section id="dificultades">
+        <div class="section-header">
+            <div class="section-icon">
+                <i class="fas fa-mountain"></i>
+            </div>
+            <h2 class="section-title">Dificultades en el Camino</h2>
+            <p class="section-subtitle">Los desafíos superados durante la migración</p>
+        </div>
+
+        <div class="highlight-box">
+            <p>
+                La migración de Netflix no fue un camino sencillo; fue un proceso complejo que duró años y 
+                estuvo lleno de desafíos técnicos y organizativos. La transformación requirió una inversión 
+                masiva en recursos, talento y cambio cultural.
+            </p>
+        </div>
+
+        <div class="cards-grid">
+            <div class="card">
+                <div class="card-icon">
+                    <i class="fas fa-database"></i>
+                </div>
+                <h3>Complejidad de la Migración de Datos</h3>
+                <p>Pasar de una arquitectura monolítica con Oracle centralizada a cientos de microservicios y bases de datos distribuidas fue una tarea titánica. No se trataba solo de mover datos, sino de rediseñar la aplicación por completo. El proceso tomó alrededor de 7 años y requirió planificación meticulosa para evitar cortes prolongados.</p>
+            </div>
+
+            <div class="card">
+                <div class="card-icon">
+                    <i class="fas fa-graduation-cap"></i>
+                </div>
+                <h3>Curva de Aprendizaje</h3>
+                <p>El equipo tuvo que dominar nuevas tecnologías: pasar de SQL a NoSQL como Cassandra implicó aprender modelos de datos diferentes, consistencia eventual y nuevas formas de diseñar aplicaciones tolerantes a fallos. La adopción de microservicios requirió cambiar la mentalidad de desarrollo y operación.</p>
+            </div>
+
+            <div class="card">
+                <div class="card-icon">
+                    <i class="fas fa-code-branch"></i>
+                </div>
+                <h3>Consistencia y Linaje de Datos</h3>
+                <p>Con datos dispersos en múltiples servicios (Cassandra, MySQL, S3, etc.), entender de dónde venían los datos y cómo fluían se convirtió en un gran reto. Construir un sistema completo para mapear todas las relaciones entre activos de datos fue una tarea monumental.</p>
+            </div>
+
+            <div class="card">
+                <div class="card-icon">
+                    <i class="fas fa-cloud"></i>
+                </div>
+                <h3>Dependencia de un Solo Proveedor</h3>
+                <p>Aunque AWS ofrecía elasticidad, Netflix enfrentó el desafío de depender de un único proveedor. Para mitigar este riesgo, invirtieron en capas de abstracción y herramientas que permitieran operar de manera efectiva multi-región y diseñar el sistema para ser altamente tolerante a fallos.</p>
+            </div>
+
+            <div class="card">
+                <div class="card-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <h3>Resistencia al Cambio Cultural</h3>
+                <p>Pasar de un modelo centralizado a uno donde los equipos tienen "libertad y responsabilidad" requirió un cambio de mentalidad organizacional. Se establecieron nuevas prácticas de comunicación, propiedad del código y colaboración para que cientos de equipos trabajaran de forma independiente.</p>
+            </div>
+
+            <div class="card">
+                <div class="card-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <h3>Gestión del Downtime</h3>
+                <p>Trasladar cantidades masivas de datos de centros de datos propios a AWS sin interrumpir un servicio en pleno crecimiento requirió estrategias de migración complejas, incluyendo replicación continua, estrategias de rollback y ventanas de mantenimiento cuidadosamente planificadas.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Lecciones Section -->
+    <section id="lecciones">
+        <div class="section-header">
+            <div class="section-icon">
+                <i class="fas fa-lightbulb"></i>
+            </div>
+            <h2 class="section-title">Lecciones para Otras Empresas</h2>
+            <p class="section-subtitle">Aprendizajes clave aplicables a cualquier organización</p>
+        </div>
+
+        <div class="highlight-box">
+            <p>
+                El caso de Netflix se ha convertido en un referente de cómo abordar una transformación 
+                tecnológica a gran escala. Estas lecciones pueden guiar a otras empresas en contextos similares.
+            </p>
+        </div>
+
+        <div class="feature-list">
+            <div class="feature-item">
+                <div class="feature-icon">
+                    <i class="fas fa-route"></i>
+                </div>
+                <div class="feature-content">
+                    <h4>Adoptar un Enfoque Gradual e Iterativo</h4>
+                    <p>Netflix no migró todo de un día para otro. Comenzaron con sistemas no críticos y fueron migrando servicios más complejos a medida que ganaban confianza. Este enfoque incremental (estrategia de "estrangulador") permitió aprender sobre la marcha sin poner en riesgo el negocio.</p>
+                </div>
+            </div>
+
+            <div class="feature-item">
+                <div class="feature-icon">
+                    <i class="fas fa-bomb"></i>
+                </div>
+                <div class="feature-content">
+                    <h4>Construir una Cultura de Resiliencia (Chaos Engineering)</h4>
+                    <p>La creación de Chaos Monkey, que deliberadamente desactiva servicios en producción, demuestra la importancia de probar la resiliencia del sistema. Las empresas deberían invertir en probar activamente sus puntos débiles y practicar la recuperación ante desastres.</p>
+                </div>
+            </div>
+
+            <div class="feature-item">
+                <div class="feature-icon">
+                    <i class="fas fa-layer-group"></i>
+                </div>
+                <div class="feature-content">
+                    <h4>Adoptar la Persistencia Políglota</h4>
+                    <p>En lugar de buscar una base de datos única, evalúa las necesidades específicas de cada tipo de dato. Como hizo Netflix: relacional para transacciones críticas, NoSQL para perfiles a gran escala, en memoria para caché, y CDN para contenido. Esto optimiza rendimiento, escalabilidad y costo.</p>
+                </div>
+            </div>
+
+            <div class="feature-item">
+                <div class="feature-icon">
+                    <i class="fas fa-eye"></i>
+                </div>
+                <div class="feature-content">
+                    <h4>Priorizar la Observabilidad y Data Lineage</h4>
+                    <p>Cuando un sistema se vuelve distribuido, es fundamental poder "ver" lo que sucede. La inversión de Netflix en linaje de datos demuestra la importancia de entender dependencias entre servicios. Implementa herramientas robustas de monitoreo y trazabilidad desde el principio.</p>
+                </div>
+            </div>
+
+            <div class="feature-item">
+                <div class="feature-icon">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <div class="feature-content">
+                    <h4>Invertir en Talentos y Automatización</h4>
+                    <p>La migración requirió ingenieros de primer nivel y fuerte inversión en automatización (CI/CD, infraestructura como código). Netflix construyó plataformas internas como Spinnaker para que los equipos fueran autónomos. La automatización no es un lujo, es una necesidad para operar a escala.</p>
+                </div>
+            </div>
+
+            <div class="feature-item">
+                <div class="feature-icon">
+                    <i class="fas fa-balance-scale"></i>
+                </div>
+                <div class="feature-content">
+                    <h4>Equilibrar Libertad y Responsabilidad</h4>
+                    <p>El modelo de Netflix de dar a los equipos libertad para elegir sus tecnologías, junto con la responsabilidad de operarlas, fomentó la innovación y la propiedad. Este enfoque requiere cultura de confianza y métricas claras de responsabilidad.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- References Section -->
+    <section>
+        <div class="references">
+            <h3><i class="fas fa-book"></i> Referencias</h3>
+            <ol>
+                <li>
+                    Y. Izrailevsky, A. Tseitlin y C. Karp. (2016, Feb. 11). <em>Netflix: Completing the Cloud Migration.</em> 
+                    [Online]. Available: <a href="https://about.netflix.com/en/news/completing-the-netflix-cloud-migration" target="_blank">
+                    https://about.netflix.com/en/news/completing-the-netflix-cloud-migration</a>
+                </li>
+                <li>
+                    D. Milanović. (2024, Dec. 1). <em>How Netflix Works: Architecture, Scalability and Distributed Systems.</em> 
+                    [Online]. Available: <a href="https://www.scribd.com/document/939023979/Netflix-Cloud-Migration-and-Scalability-FINAL" target="_blank">
+                    https://www.scribd.com/document/939023979/Netflix-Cloud-Migration-and-Scalability-FINAL</a>
+                </li>
+                <li>
+                    A. Lampitt. (2013, May 2). <em>Big movies, big data: Netflix embraces NoSQL in the cloud.</em> 
+                    [Online]. Available: <a href="https://www.infoworld.com/article/2171162/big-movies-big-data-netflix-embraces-nosql-in-the-cloud.html" target="_blank">
+                    https://www.infoworld.com/article/2171162/big-movies-big-data-netflix-embraces-nosql-in-the-cloud.html</a>
+                </li>
+                <li>
+                    D. Lin, G. Lingappa y J. Aswani. (2019, Mar. 25). <em>Building and Scaling Data Lineage at Netflix.</em> 
+                    [Online]. Available: <a href="https://netflixtechblog.com/building-and-scaling-data-lineage-at-netflix-to-improve-data-infrastructure-reliability-and-1a52526a7977" target="_blank">
+                    https://netflixtechblog.com/building-and-scaling-data-lineage-at-netflix</a>
+                </li>
+                <li>
+                    M. Milanović. (2025, Apr. 10). <em>How does Netflix manage to show you a movie without interruptions.</em> 
+                    [Online]. Available: <a href="https://newsletter.techworld-with-milan.com/p/how-does-netflix-manage-to-show-you" target="_blank">
+                    https://newsletter.techworld-with-milan.com/p/how-does-netflix-manage-to-show-you</a>
+                </li>
+            </ol>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-content">
+            <div class="footer-logo">N</div>
+            <p class="footer-text">Caso de Estudio: Evolución de Bases de Datos en Netflix</p>
+            <p class="footer-team">
+                <span>Grupo:</span> [Nombres de los integrantes del equipo]
+            </p>
+            <p style="color: var(--netflix-light-gray); font-size: 0.85rem; margin-top: 1rem;">
+                © 2024 - Proyecto Académico
+            </p>
+        </div>
+    </footer>
+
+    <script>
+        // Show/hide navigation on scroll
+        const navbar = document.getElementById('navbar');
+        let lastScroll = 0;
+
+        window.addEventListener('scroll', () => {
+            const currentScroll = window.pageYOffset;
+            
+            if (currentScroll > 100) {
+                navbar.classList.add('visible');
+            } else {
+                navbar.classList.remove('visible');
+            }
+            
+            lastScroll = currentScroll;
+        });
+
+        // Smooth scroll for navigation links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Add animation on scroll
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.card, .timeline-content, .feature-item').forEach(el => {
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(30px)';
+            el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+            observer.observe(el);
+        });
+    </script>
+</body>
+</html>
